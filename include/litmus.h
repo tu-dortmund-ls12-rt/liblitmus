@@ -478,6 +478,12 @@ int null_call(cycles_t *timestamp);
  */
 struct control_page* get_ctrl_page(void);
 
+/**
+ * Signal end of computation segment.
+ * 
+ */
+void signal_end_segment(void);
+
 #ifdef __cplusplus
 }
 #endif

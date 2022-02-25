@@ -106,6 +106,9 @@ int init_kernel_iface(void)
 		     != LITMUS_CP_OFFSET_RELEASE);
 	BUILD_BUG_ON(offsetof(struct control_page, job_index)
 		     != LITMUS_CP_OFFSET_JOB_INDEX);
+	BUILD_BUG_ON(offsetof(struct control_page, end_segment)
+		     != LITMUS_CP_OFFSET_END_SEGMENT);
+
 
 	ctrl_fd = map_file(LITMUS_CTRL_DEVICE, &mapped_at, CTRL_PAGES * page_size);
 
@@ -149,6 +152,14 @@ void exit_np(void)
 int requested_to_preempt(void)
 {
 	return (likely(ctrl_page != NULL) && ctrl_page->sched.np.preempt);
+}
+
+void signal_end_segment(void)
+{
+	if(likely(ctrl_page != NULL) || init_kernel_iface() == 0)
+		ctrl_page->end_segment = 1;
+	else
+		fprintf(stderr, "end_segment: control page not mapped!\n");
 }
 
 /* init and return a ptr to the control page for
