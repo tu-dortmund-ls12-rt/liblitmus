@@ -28,6 +28,7 @@ cycles
 measure_syscall
 uncache
 resctrl
+segrtspin
 
 # build system files
 .config
