@@ -106,6 +106,8 @@ int init_kernel_iface(void)
 		     != LITMUS_CP_OFFSET_RELEASE);
 	BUILD_BUG_ON(offsetof(struct control_page, job_index)
 		     != LITMUS_CP_OFFSET_JOB_INDEX);
+	BUILD_BUG_ON(offsetof(struct control_page, segment_index)
+		     != LITMUS_CP_OFFSET_SEGMENT_INDEX);
 	BUILD_BUG_ON(offsetof(struct control_page, end_segment)
 		     != LITMUS_CP_OFFSET_END_SEGMENT);
 

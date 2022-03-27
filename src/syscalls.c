@@ -112,3 +112,8 @@ int get_current_budget(
 	args.get_current_budget.remaining = remaining;
 	return litmus_syscall(LRT_get_current_budget, (unsigned long) &args);
 }
+
+int begin_segment()
+{
+	return litmus_syscall(LRT_begin_segment, 0);
+}

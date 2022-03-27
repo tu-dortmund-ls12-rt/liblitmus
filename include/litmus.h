@@ -484,6 +484,12 @@ struct control_page* get_ctrl_page(void);
  */
 void signal_end_segment(void);
 
+/**
+ * Signal start of computation segment.
+ * 
+ */
+int begin_segment(void);
+
 #ifdef __cplusplus
 }
 #endif
