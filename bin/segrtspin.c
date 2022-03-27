@@ -854,6 +854,8 @@ int main(int argc, char** argv)
 		}
 
 		for (int segment = 0; segment < num_segments; segment++) {
+			begin_segment();
+			assert(segment == get_ctrl_page()->segment_index);
 			/* figure out for how long this job should use the CPU */
 
 			if (cost_csv_file) {
