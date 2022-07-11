@@ -54,7 +54,8 @@ const char *usage_msg =
 	"    -o OFFSET         offset (also known as phase), zero by default (in ms)\n"
 	"    -p CPU            partition or cluster to assign this task to\n"
 	"    -q PRIORITY       priority to use (ignored by EDF plugins, highest=1, lowest=511)\n"
-	"    -P		       expect per segment priorities"
+	"    -P		       expect per segment priorities\n"
+	"    -t                expect per segment release times\n"
 	"    -r VCPU           virtual CPU or reservation to attach to (irrelevant to most plugins)\n"
 	"    -R                create sporadic reservation for task (with VCPU=PID)\n"
 	"    -s SCALE          fraction of WCET to spin for (1.0 means 100%, default 0.95)\n"
@@ -339,14 +340,15 @@ static lt_t choose_inter_arrival_time_ns(
 	return ms2ns(iat_ms);
 }
 
-#define OPTSTR "p:c:wlveo:s:m:q:r:X:L:Q:iRu:U:Bhd:C:S::O::TD:E:A:a:P"
+#define OPTSTR "p:c:wlveo:s:m:q:r:X:L:Q:iRu:U:Bhd:C:S::O::TD:E:A:a:Pt"
 
 int main(int argc, char** argv)
 {
 	int ret;
 	int num_segments;
 	lt_t wcts[32];
-	unsigned int segment_priorities[32];
+	unsigned int segment_priorities[16];
+	unsigned int segement_release_offsets[16];
 	lt_t wcet;
 	lt_t period, deadline;
 	lt_t phase;
@@ -412,6 +414,7 @@ int main(int argc, char** argv)
 	double cs_length = 1; /* millisecond */
 
 	int per_segment_priorities = 0;
+	int per_segment_releases = 0;
 
 	progname = argv[0];
 
@@ -561,6 +564,9 @@ int main(int argc, char** argv)
 		case 'P':
 			per_segment_priorities = 1;
 			break;
+		case 't':
+			per_segment_releases = 1;
+			break;
 		case '?':
 		default:
 			usage("Bad argument.");
@@ -620,7 +626,7 @@ int main(int argc, char** argv)
 		usage("Arguments missing.");
 
 	wcet = 0;
-	if (per_segment_priorities) {
+	if (per_segment_priorities || per_segment_releases) {
 		int groups = (argc - optind - 1) / 3;
 		//group_size = 3;
 		/* Two Segments per group. Last group only has computation segment */
@@ -632,9 +638,17 @@ int main(int argc, char** argv)
 
 		for (arg = 0; arg < groups; arg++) {
 			wcts[2 * arg] = ms2ns(want_positive_double(argv[optind + 3 * arg], "C"));
-			segment_priorities[arg] = want_non_negative_int(argv[optind + 3 * arg + 1], "P");
-			if (!litmus_is_valid_fixed_prio(segment_priorities[arg]))
-				usage("Invalid priority");
+			if (per_segment_priorities) {
+				segment_priorities[arg] = want_non_negative_int(argv[optind + 3 * arg + 1], "P");
+				if (!litmus_is_valid_fixed_prio(segment_priorities[arg]))
+					usage("Invalid priority");
+			} else {
+				segment_priorities[arg] = priority;
+			}
+			if (per_segment_releases) {
+				fprintf(stderr, "%s", argv[optind + 3 * arg + 1]);
+				segement_release_offsets[arg] = ms2ns(want_non_negative_double(argv[optind + 3 * arg + 1], "R"));
+			}
 			if (arg != groups - 1)
 				wcts[2 * arg + 1] = ms2ns(want_positive_double(argv[optind + 3 * arg + 2], "S"));
 		}
@@ -731,8 +745,16 @@ int main(int argc, char** argv)
 	for (int i = 0; i < num_segments; i += 2) {
 		param.exec_costs[i / 2] = wcts[i];
 	}
-	for (int i = 0; i < 16; i++) {
-		param.priorities[i] = segment_priorities[i];
+	if (per_segment_priorities) {
+		for (int i = 0; i < 16; i++) {
+			param.priorities[i] = segment_priorities[i];
+		}
+	}
+	if (per_segment_releases) {
+		for (int i = 0; i < 16; i++) {
+			param.release_offsets[i] = segement_release_offsets[i];
+		}
+
 	}
 	if (migrate) {
 		if (reservation >= 0)
@@ -855,7 +877,9 @@ int main(int argc, char** argv)
 
 		for (int segment = 0; segment < num_segments; segment++) {
 			begin_segment();
-			assert(segment == get_ctrl_page()->segment_index);
+			fprintf(stderr, "segment: %d\n", segment);
+			fprintf(stderr, "ctrl_page->segment_index: %lu\n", get_ctrl_page()->segment_index);
+			//assert(segment == get_ctrl_page()->segment_index);
 			/* figure out for how long this job should use the CPU */
 
 			if (cost_csv_file) {
