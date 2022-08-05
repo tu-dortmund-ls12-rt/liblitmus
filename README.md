@@ -117,6 +117,10 @@ wait for a sytem release. Run `rtspin -h` for further options.
 The parameters `WCET` and `PERIOD` must be given in milliseconds, the
 paramter `DURATION` must be given in seconds.
 
+### segrtspin
+
+A version of rt_spin for segmented task. See program help for syntax.
+
 ### release_ts
 
 Run as:

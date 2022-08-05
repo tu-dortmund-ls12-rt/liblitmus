@@ -156,6 +156,7 @@ int requested_to_preempt(void)
 	return (likely(ctrl_page != NULL) && ctrl_page->sched.np.preempt);
 }
 
+/* Indicates that the next program suspension is the end of the currentr segment */
 void signal_end_segment(void)
 {
 	if(likely(ctrl_page != NULL) || init_kernel_iface() == 0)
